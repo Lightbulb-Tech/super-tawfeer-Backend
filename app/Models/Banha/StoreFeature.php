@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Models\Banha;
+
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class StoreFeature extends Model implements TranslatableContract
+{
+    use HasFactory;
+    use Translatable;
+
+    public $translatedAttributes = ['title', 'description'];
+    protected $fillable = ['store_id', 'icon'];
+}

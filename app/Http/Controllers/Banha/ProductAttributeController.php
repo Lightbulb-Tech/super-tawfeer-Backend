@@ -1,0 +1,113 @@
+<?php
+
+namespace App\Http\Controllers\Banha;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Banha\ProductAttributeRequest as objRequest;
+use App\Services\Banha\ProductAttributeService as objService;
+use App\Services\Banha\ProductService;
+use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
+
+
+class ProductAttributeController extends Controller
+{
+    private string $folderPath = 'banha.product_attributes.';
+    private string $mainRoute = 'product-attribute';
+
+    public function index(Request $request, objService $service , ProductService $productService)
+    {
+        $productId = $request->productId;
+        $product = $productService->find($productId);
+        if ($request->ajax()) {
+            $data = $service->getDataForDataTable($productId);
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->addColumn('actions', function ($row) {
+                    $deleteButton = '';
+                    $editButton = editBtn($this->mainRoute, $row->id, $row->title);
+                    $deleteButton = deleteBtn($this->mainRoute, $row->id);
+                    return $editButton . ' ' . $deleteButton;
+                })
+                ->rawColumns(['actions'])
+                ->make(true);
+        }
+        $data["createRoute"] = route($this->mainRoute . ".create", ['productId' => $productId]);
+        $data["dataTableRoute"] = route($this->mainRoute . ".index", ['productId' => $productId]);
+        $data["bladeTitle"] = __("banha.add_product_attributes");
+        $data["addButtonText"] = __("banha.add_product_attributes");
+        $data["productId"] = $productId;
+        $data["product"] = $product;
+        $data["modelSize"] = 'xl';
+        return view($this->folderPath . '.index', $data);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create(objService $service)
+    {
+        if (request()->ajax()) {
+            $productId = \request()->productId;
+            $html = view($this->folderPath . 'create')
+                ->with([
+                    'storeRoute' => route($this->mainRoute . '.store'),
+                    'productId' => $productId,
+                ])->render();
+            return jsonSuccess(['html' => $html]);
+        }
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(objRequest $request, objService $service)
+    {
+        $dataInsert = $request->validated();
+        $data = $service->storeWithFilesWithOneLanguage($dataInsert);
+        return jsonSuccess($data);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit($id, objService $service)
+    {
+        $html = view($this->folderPath . 'edit')
+            ->with([
+                'updateRoute' => route($this->mainRoute . '.update', $id),
+                'obj' => $service->find($id),
+            ])
+            ->render();
+        return jsonSuccess(['html' => $html]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(objRequest $request, string $id, objService $service)
+    {
+        $dataInsert = $request->validated();
+        $data = $service->updateWithFiles($id, $dataInsert);
+        return jsonSuccess($data);
+
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id, objService $service)
+    {
+        $service->deleteWithFiles($id);
+        return jsonSuccess();
+
+    }
+}
